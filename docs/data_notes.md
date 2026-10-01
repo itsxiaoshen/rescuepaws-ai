@@ -2,7 +2,7 @@
 
 All animals are synthetic. No real adopter, volunteer, or medical data.
 
-## Target distribution (40 animals)
+## Target distribution (45 animals)
 - Species: 28 dogs, 10 cats, 2 other (rabbit, guinea pig)
 - Size (dogs): ~9 small, ~11 medium, ~8 large
 - Status: 30 available, 4 on_hold, 3 medical_care, 3 adopted

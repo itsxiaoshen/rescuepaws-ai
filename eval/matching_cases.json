@@ -1,0 +1,138 @@
+[
+  {
+    "case_id": "M01",
+    "request": "I live in an apartment, have a young child and another small dog, and want a calm medium-sized dog.",
+    "needs": {"species": "dog", "size": "medium", "has_children": true, "has_dogs": true},
+    "acceptable_ids": ["RP-0001"],
+    "unsafe_ids": ["RP-0019"],
+    "note": "Roadmap example. Otis has a toddler incident in his notes."
+  },
+  {
+    "case_id": "M02",
+    "request": "I run every morning and want an energetic dog to come with me. No kids, no other pets.",
+    "needs": {"species": "dog"},
+    "acceptable_ids": ["RP-0010", "RP-0013", "RP-0031", "RP-0040", "RP-0023", "RP-0002"],
+    "unsafe_ids": [],
+    "note": "High-energy adult or adolescent dogs."
+  },
+  {
+    "case_id": "M03",
+    "request": "I'm retired and would love an older dog who just wants short walks and lots of naps.",
+    "needs": {"species": "dog"},
+    "acceptable_ids": ["RP-0014", "RP-0009"],
+    "unsafe_ids": [],
+    "note": "Seniors (84+ months) with low energy."
+  },
+  {
+    "case_id": "M04",
+    "request": "I work from home in a small apartment and want a quiet, low-key cat.",
+    "needs": {"species": "cat"},
+    "acceptable_ids": ["RP-0008", "RP-0036", "RP-0012", "RP-0003"],
+    "unsafe_ids": [],
+    "note": "Quiet or calm cats."
+  },
+  {
+    "case_id": "M05",
+    "request": "We have two kids and want a playful young cat they can play with.",
+    "needs": {"species": "cat", "has_children": true},
+    "acceptable_ids": ["RP-0028", "RP-0021"],
+    "unsafe_ids": [],
+    "note": "Cats recorded good with children and described as playful/social."
+  },
+  {
+    "case_id": "M06",
+    "request": "I already have a friendly dog. Looking for a cat that can live with him.",
+    "needs": {"species": "cat", "has_dogs": true},
+    "acceptable_ids": ["RP-0021", "RP-0044"],
+    "unsafe_ids": [],
+    "note": "Cats recorded good with dogs."
+  },
+  {
+    "case_id": "M07",
+    "request": "Our family with children would like to adopt a rabbit.",
+    "needs": {"species": "other", "has_children": true},
+    "acceptable_ids": ["RP-0025", "RP-0045"],
+    "unsafe_ids": [],
+    "note": "Both rabbits are recorded good with children."
+  },
+  {
+    "case_id": "M08",
+    "request": "I have two cats at home and want a calm dog that won't bother them.",
+    "needs": {"species": "dog", "has_cats": true},
+    "acceptable_ids": ["RP-0014", "RP-0030", "RP-0019"],
+    "unsafe_ids": [],
+    "note": "Dogs recorded good with cats. Otis is fine here (no children)."
+  },
+  {
+    "case_id": "M09",
+    "request": "Experienced owner looking for a large dog to take hiking on weekends.",
+    "needs": {"species": "dog", "size": "large"},
+    "acceptable_ids": ["RP-0043", "RP-0037", "RP-0013", "RP-0031"],
+    "unsafe_ids": [],
+    "note": "Large dogs that enjoy long walks or hikes."
+  },
+  {
+    "case_id": "M10",
+    "request": "I want a puppy I can train, and I already have an adult dog at home.",
+    "needs": {"species": "dog", "has_dogs": true},
+    "acceptable_ids": ["RP-0002", "RP-0006", "RP-0020", "RP-0027", "RP-0038"],
+    "unsafe_ids": [],
+    "note": "Puppies (under 12 months) recorded good with dogs."
+  },
+  {
+    "case_id": "M11",
+    "request": "I have a quiet home and lots of patience for a shy dog who needs time to trust people.",
+    "needs": {"species": "dog"},
+    "acceptable_ids": ["RP-0016", "RP-0035", "RP-0030"],
+    "unsafe_ids": [],
+    "note": "Dogs described as shy, cautious, or nervous."
+  },
+  {
+    "case_id": "M12",
+    "request": "Looking for a small, calm dog. I have a cat.",
+    "needs": {"species": "dog", "size": "small", "has_cats": true},
+    "acceptable_ids": ["RP-0014", "RP-0030"],
+    "unsafe_ids": [],
+    "note": "Small dogs recorded good with cats."
+  },
+  {
+    "case_id": "M13",
+    "request": "I want a dog that loves fetch and playing in water.",
+    "needs": {"species": "dog"},
+    "acceptable_ids": ["RP-0038", "RP-0026", "RP-0031", "RP-0013", "RP-0006"],
+    "unsafe_ids": [],
+    "note": "Dogs that enjoy balls, retrieving, or water."
+  },
+  {
+    "case_id": "M14",
+    "request": "I'd like a dog who enjoys puzzle toys, sniffing games, and learning tricks.",
+    "needs": {"species": "dog"},
+    "acceptable_ids": ["RP-0035", "RP-0043", "RP-0016", "RP-0023"],
+    "unsafe_ids": [],
+    "note": "Dogs with puzzles, scent work, or treat training in their notes."
+  },
+  {
+    "case_id": "M15",
+    "request": "We have a toddler and want a gentle family dog. Any size is fine.",
+    "needs": {"species": "dog", "has_children": true},
+    "acceptable_ids": ["RP-0001", "RP-0009", "RP-0037"],
+    "unsafe_ids": ["RP-0019"],
+    "note": "Gentle dogs recorded good with children. Otis has a toddler incident."
+  },
+  {
+    "case_id": "M16",
+    "request": "I want an affectionate cat who enjoys being brushed and cuddled.",
+    "needs": {"species": "cat"},
+    "acceptable_ids": ["RP-0012", "RP-0003", "RP-0036"],
+    "unsafe_ids": [],
+    "note": "Affectionate cats."
+  },
+  {
+    "case_id": "M17",
+    "request": "Large dog wanted. We have young kids, a cat, and another dog.",
+    "needs": {"species": "dog", "size": "large", "has_children": true, "has_cats": true, "has_dogs": true},
+    "acceptable_ids": [],
+    "unsafe_ids": [],
+    "note": "No-match case: no available large dog is confirmed with kids, cats, AND dogs."
+  }
+]
