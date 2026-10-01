@@ -1,0 +1,332 @@
+RescuePaws AI
+
+Agentic Animal Shelter Assistant — Project Roadmap Portfolio goal:
+Agent + Tool Calling + RAG + Semantic Matching + Multimodal Intake +
+Evaluation
+
+1. Project Goal
+
+Build an end-to-end AI assistant for a real volunteer-run animal shelter
+caring for 500+ rescued animals. The first version focuses on adoption
+operations: organizing animal information, matching adopters with
+suitable animals, answering shelter/adoption questions from trusted
+records, and using an AI agent to choose the right tool for each task.
+Scope rule: keep fundraising/accounting as a possible Phase 2 extension.
+Do not include it in the first MVP.
+
+2. What This Project Should Demonstrate
+
+-   Python application development and clean data modeling.
+-   Semantic search / embeddings for adoption matching.
+-   RAG over shelter policies and animal records with grounded answers.
+-   Agentic workflow and tool calling: the model decides which tool to
+    use based on the user’s request.
+-   Multimodal intake: photo + volunteer notes → structured animal
+    profile, without inferring health or temperament from appearance.
+-   Evaluation: matching quality, retrieval quality, groundedness,
+    tool-selection accuracy, and failure handling.
+-   Engineering: FastAPI, simple UI, logging, tests, Docker, README, and
+    reproducible demo.
+
+3. MVP User Flow
+
+Example: an adopter says, “I live in an apartment, have a young child
+and another small dog, and want a calm medium-sized dog.” The agent
+identifies this as an adoption-search task, calls the matching tool,
+returns several candidates with reasons and unknowns, then can retrieve
+a selected animal’s record or answer adoption-policy questions through
+RAG.
+
+4. Suggested Architecture
+
+  -----------------------------------------------------------------------
+  Layer                   Responsibility          First-version choice
+  ----------------------- ----------------------- -----------------------
+  Data                    Animal profiles,        JSON / CSV first
+                          volunteer notes,        
+                          shelter policies        
+
+  Core tools              Search, profile lookup, Plain Python functions
+                          matching, policy        
+                          retrieval               
+
+  Semantic layer          Embeddings + similarity Local vector store
+                          search                  
+
+  RAG                     Retrieve evidence       Small policy/record
+                          before answering        corpus
+
+  Agent                   Choose and call tools;  LLM tool calling;
+                          combine results         framework optional
+
+  API                     Expose core workflows   FastAPI
+
+  UI                      Demo adoption           Streamlit or simple web
+                          search/chat             UI
+
+  Evaluation              Measure quality and     Small hand-labeled test
+                          reliability             set
+  -----------------------------------------------------------------------
+
+5. Execution Roadmap
+
+Phase 0 — Repo & Environment (Day 1)
+
+-   ☐ Create GitHub repository: rescuepaws-ai.
+-   ☐ Create Python virtual environment and requirements/pyproject.
+-   ☐ Create folders: data/, src/, tests/, notebooks/, app/, eval/,
+    docs/.
+-   ☐ Write a 5–10 line README describing the real shelter problem, MVP
+    scope, and safety principle.
+-   ☐ Add .gitignore and environment-variable handling for API keys.
+    Done when: repo runs locally, imports work, README explains the
+    project in plain English.
+
+Phase 1 — Structured Animal Data (Days 1–3)
+
+-   ☐ Define an AnimalProfile schema. Suggested fields: animal_id, name,
+    species, sex, estimated_age, size, vaccination_status,
+    sterilization_status, medical_notes, behavior_notes, good_with_dogs,
+    good_with_cats, good_with_children, location/status,
+    source/evidence.
+-   ☐ Represent unknown information explicitly as Unknown/Not recorded
+    instead of guessing.
+-   ☐ Create 30–50 synthetic or de-identified sample animal profiles.
+    Use real shelter structure if available, but do not publish private
+    adopter/volunteer data.
+-   ☐ Write validation/loading code and basic unit tests.
+-   ☐ Implement get_animal_profile(animal_id) and filter_animals(…).
+    Done when: you can load the dataset, validate it, retrieve one
+    animal, and filter by structured attributes.
+
+Phase 2 — Semantic Adoption Matching (Days 4–7)
+
+-   ☐ Create adopter-request examples in natural language.
+-   ☐ Build a text representation of each animal profile using only
+    supported shelter information.
+-   ☐ Generate embeddings for profiles and adopter requests.
+-   ☐ Implement semantic retrieval: request → top-k candidate animals.
+-   ☐ Add simple structured constraints where appropriate (for example
+    species or known compatibility).
+-   ☐ Return match reasons AND unknowns; do not present unknown
+    child/cat/dog compatibility as a positive match.
+-   ☐ Create 15–20 hand-written matching test cases and
+    expected/reasonable candidates. Done when: a natural-language
+    household request returns sensible candidates and explains why they
+    were retrieved.
+
+Phase 3 — Shelter Policy RAG (Week 2)
+
+-   ☐ Create a small document set: adoption process, fees, eligibility,
+    transport, trial period/return policy, vaccination/medical policy,
+    FAQ.
+-   ☐ Parse and chunk the documents.
+-   ☐ Embed/index chunks.
+-   ☐ Implement retrieve_policy(query) → relevant chunks + source
+    metadata.
+-   ☐ Implement answer_policy_question(query) → answer grounded only in
+    retrieved evidence.
+-   ☐ Add abstention: if evidence is missing, say the records do not
+    provide the answer.
+-   ☐ Create 20–30 Q&A evaluation questions, including unanswerable
+    questions. Done when: policy questions return evidence-grounded
+    answers with source references, and unsupported questions are
+    rejected rather than invented.
+
+Phase 4 — Agent + Tool Calling (Weeks 2–3)
+
+-   ☐ Expose existing Python functions as tools instead of rewriting
+    them inside the agent.
+-   ☐ Initial tools: search_animals(), get_animal_profile(),
+    match_animals(), retrieve_adoption_policy().
+-   ☐ Define the agent’s job: understand user intent, select the correct
+    tool(s), use results, and respond clearly.
+-   ☐ Test single-tool tasks first: ‘Tell me about dog X’, ‘Find a dog
+    for…’, ‘What is the adoption fee?’.
+-   ☐ Then test multi-step conversations: search → inspect candidate →
+    policy question.
+-   ☐ Add guardrails: the agent must not invent medical/behavioral
+    facts; unknown stays unknown.
+-   ☐ Log tool calls and tool results for debugging. Done when: one chat
+    interface can correctly route different requests to different tools
+    and complete multi-step adoption conversations.
+
+Phase 5 — Multimodal Intake (Week 3)
+
+-   ☐ Add an intake flow using animal photo(s) + volunteer notes.
+-   ☐ Use the vision model only for observable visual attributes (for
+    example coat color/pattern or visible size cues).
+-   ☐ Use volunteer/veterinary text for health, temperament,
+    child/cat/dog compatibility, vaccination, and medical history.
+-   ☐ Ask the LLM to produce structured output matching AnimalProfile.
+-   ☐ Validate the output against the schema and preserve
+    source/evidence for important fields.
+-   ☐ Create a human-review step before saving the generated profile.
+    Done when: photo + notes can produce a draft structured profile that
+    a volunteer can review and approve.
+
+Phase 6 — Evaluation & Reliability (Weeks 3–4)
+
+-   ☐ Matching: create labeled adopter scenarios; measure whether
+    reasonable candidates appear in top-k.
+-   ☐ RAG: evaluate retrieval hit rate, answer groundedness/citation
+    correctness, and abstention behavior.
+-   ☐ Agent: evaluate tool-selection accuracy and end-to-end task
+    completion.
+-   ☐ Structured extraction: compare generated profile fields against a
+    small human-verified set.
+-   ☐ Failure cases: missing animal, conflicting records, no suitable
+    match, unsupported medical question, ambiguous user request.
+-   ☐ Keep an eval_results.md or CSV with experiments and what changed.
+    Done when: you can show evidence that the system works beyond a few
+    cherry-picked demos.
+
+Phase 7 — API, UI & Engineering (Weeks 4–5)
+
+-   ☐ Create FastAPI endpoints for profile lookup, matching, policy Q&A,
+    and agent chat.
+-   ☐ Build a simple demo UI. Keep it functional rather than visually
+    elaborate.
+-   ☐ Add error handling, logging, config management, and tests.
+-   ☐ Add Dockerfile and clear local-run instructions.
+-   ☐ Add sample/demo data that can be safely published.
+-   ☐ Optional: deploy a lightweight demo if cost/privacy permits. Done
+    when: another person can clone the repo, run the project, and
+    reproduce the main workflows.
+
+Phase 8 — Portfolio Polish (Week 5)
+
+-   ☐ Write a strong README: problem → architecture → data → demo →
+    evaluation → limitations → future work.
+-   ☐ Add one architecture diagram and 2–3 screenshots/GIFs.
+-   ☐ Explain why the project is agentic: the LLM selects among tools
+    rather than only answering from RAG.
+-   ☐ Document safety/reliability choices, especially unknown fields and
+    medical/behavioral grounding.
+-   ☐ Prepare a 60-second interview explanation and a 5-minute technical
+    walkthrough.
+-   ☐ Only after implementation, update resume bullets with technologies
+    and real evaluation numbers. Done when: a recruiter can understand
+    the value in 30 seconds and an engineer can understand the
+    architecture in 5 minutes.
+
+6. Recommended Repo Structure
+
+rescuepaws-ai/ data/ animals_demo.json shelter_policies/ src/ schemas.py
+data_loader.py animal_search.py matching.py rag.py tools.py agent.py
+eval/ matching_cases.json rag_questions.json agent_cases.json
+eval_results.md tests/ app/ api.py ui.py notebooks/ docs/ README.md
+requirements.txt / pyproject.toml Dockerfile .env.example
+
+7. What to Learn — Only When Needed
+
+  -----------------------------------------------------------------------
+  When                                Learn
+  ----------------------------------- -----------------------------------
+  Before Phase 1                      Python dataclasses/Pydantic, JSON,
+                                      typing, basic pytest.
+
+  Before Phase 2                      Embeddings, cosine similarity,
+                                      vector search, top-k retrieval.
+
+  Before Phase 3                      RAG basics: chunking, retrieval,
+                                      context, grounded answer,
+                                      citations.
+
+  Before Phase 4                      Function/tool calling, agent loop,
+                                      tool schemas, conversation state.
+
+  Before Phase 5                      Multimodal LLM input and structured
+                                      outputs.
+
+  Before Phase 6                      Evaluation datasets, retrieval
+                                      metrics, groundedness,
+                                      task-completion metrics.
+
+  Before Phase 7                      FastAPI, Docker, basic
+                                      deployment/logging.
+  -----------------------------------------------------------------------
+
+8. Evaluation Targets
+
+-   Matching: top-k contains a reasonable candidate for most
+    hand-labeled adopter scenarios; inspect failure cases rather than
+    chasing a fake perfect score.
+-   RAG retrieval: relevant policy/record evidence appears in top-k for
+    the evaluation set.
+-   Grounding: answers cite retrieved evidence and do not add
+    unsupported facts.
+-   Abstention: unsupported questions return ‘not available in the
+    records’ rather than hallucinations.
+-   Agent routing: correct tool selected for profile lookup, matching,
+    and policy questions; multi-step flows complete successfully.
+-   Multimodal intake: extracted structured fields match human-verified
+    notes; subjective health/temperament fields are never inferred from
+    photos alone.
+
+9. What NOT to Do in Version 1
+
+-   Do not build fundraising/accounting, inventory, volunteer
+    scheduling, medical diagnosis, and adoption workflow automation all
+    at once.
+-   Do not start with LangGraph just because the project is called an
+    agent. Build and test the tools first.
+-   Do not publish private shelter, adopter, donor, or medical
+    information without permission/de-identification.
+-   Do not let the model infer temperament, health, or suitability for
+    children/cats/dogs from appearance.
+-   Do not put unimplemented technologies or performance numbers on the
+    resume.
+
+10. Future Extensions — After the MVP
+
+-   Donation and expense records → donor-transparency dashboard /
+    monthly report generation.
+-   Adoption inquiry creation and status tracking.
+-   Volunteer task routing and follow-up reminders.
+-   Inventory / food / medicine tracking.
+-   Chinese-English bilingual shelter assistant.
+-   Real shelter database integration and role-based access.
+
+11. Five-Week Suggested Schedule
+
+  -----------------------------------------------------------------------
+  Time                                Primary goal
+  ----------------------------------- -----------------------------------
+  Week 1                              Repo + schema + sample data +
+                                      profile tools + semantic matching
+
+  Week 2                              Policy RAG + evaluation set + first
+                                      grounded Q&A
+
+  Week 3                              Agent/tool calling + multi-step
+                                      flows + multimodal intake
+
+  Week 4                              Evaluation, reliability, failure
+                                      handling, logging
+
+  Week 5                              FastAPI + UI + Docker + README +
+                                      interview/demo preparation
+  -----------------------------------------------------------------------
+
+12. Start Today — First 90 Minutes
+
+-   ☐ Create the GitHub repo and Python environment.
+-   ☐ Create the folder structure.
+-   ☐ Write the AnimalProfile schema.
+-   ☐ Manually create 5 sample animal records.
+-   ☐ Write get_animal_profile() and filter_animals().
+-   ☐ Commit: ‘Initialize RescuePaws data model and profile tools’. Do
+    not call an LLM on Day 1 unless the basic data model and functions
+    already work. The agent will be much easier to understand once its
+    tools exist.
+
+13. Interview Story
+
+Problem: a real shelter has 500+ rescued animals and limited manpower,
+with information that is difficult to organize consistently. Solution:
+build an agentic assistant that can choose among animal lookup, semantic
+matching, and RAG-based shelter knowledge tools. Reliability: keep
+medical/behavioral claims grounded in verified records, preserve
+unknowns, and evaluate tool selection and retrieval. Engineering: expose
+the system through an API/UI and make the repo reproducible.
