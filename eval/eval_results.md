@@ -24,3 +24,25 @@
   (M01, M15). Matching ignores the toddler incident in behavior_notes. Fix planned for Phase 6.
 - M02: Otis ranked #1 for a running companion. The small embedding model
   doesn't capture energy level well.
+
+## Policy Retrieval (Phase 3)
+
+### Run 1: section-based chunking v1
+- Model: all-MiniLM-L6-v2 (local), top_k = 3
+- Corpus: 7 synthetic policy documents, 34 chunks (one per section)
+- Questions: 24 answerable, 6 unanswerable (phrased differently from the documents)
+
+| Metric | Value |
+|--------|-------|
+| Hit@1  | 0.71 (17/24) |
+| Hit@3  | 0.92 (22/24) |
+| MRR@3  | 0.80 |
+
+**Observations**
+- Misses: R06 ("can no longer keep him" vs "returns") and R07 ("give to neighbor"
+  vs "rehoming"). Vocabulary mismatch; candidates for hybrid BM25 + embedding search.
+- Top-1 similarity cannot detect unanswerable questions. Answerable min = 0.34,
+  unanswerable max = 0.65; the distributions overlap. U02 (pet insurance) scored
+  0.65 because it is on-topic with "What the fee covers", which never mentions
+  insurance. Decision: abstention is handled by the LLM checking the evidence,
+  not by a score threshold.
