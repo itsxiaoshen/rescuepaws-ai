@@ -1,7 +1,7 @@
 """Data models for RescuePaws AI."""
 from enum import Enum
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class Species(str, Enum):
@@ -69,3 +69,10 @@ class AnimalProfile(BaseModel):
 
     # field name -> where this information came from
     evidence: dict[str, str] = Field(default_factory=dict)
+    @field_validator("evidence")
+    @classmethod
+    def evidence_keys_must_be_fields(cls, value: dict[str, str]) -> dict[str, str]:
+        unknown_keys = set(value) - set(cls.model_fields)
+        if unknown_keys:
+            raise ValueError(f"evidence refers to unknown fields: {sorted(unknown_keys)}")
+        return value

@@ -14,7 +14,7 @@ def animals():
 
 
 def test_load_demo_data(animals):
-    assert len(animals) == 5
+    assert len(animals) >= 30
 
 
 def test_get_existing_animal(animals):
@@ -58,5 +58,13 @@ def test_filter_excludes_adopted_by_default(animals):
 
 def test_filter_children_excludes_unknown(animals):
     results = filter_animals(animals, species=Species.DOG, good_with_children=True)
-    ids = [a.animal_id for a in results]
-    assert ids == ["RP-0001"]      # Biscuit is unknown with children, so he is excluded
+    assert len(results) > 0
+    assert all(a.good_with_children == TriState.YES for a in results)
+    assert "RP-0002" not in [a.animal_id for a in results]   # Biscuit: unknown with children
+
+def test_evidence_with_unknown_field_is_rejected():
+    with pytest.raises(ValidationError):
+        AnimalProfile(
+            animal_id="RP-0100", name="Test", species="dog",
+            evidence={"good_with_kids": "observed"},
+        )
