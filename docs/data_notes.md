@@ -25,3 +25,8 @@ All animals are synthetic. No real adopter, volunteer, or medical data.
 - Duplicate names: Mochi (RP-0001, RP-0006), Biscuit (RP-0002, RP-0011),
   Pepper (RP-0005, RP-0010), Luna (RP-0003 cat, RP-0026 dog).
   Expected: agent asks which animal the user means.
+
+## Known issues found
+- Phase 2 matching ranks RP-0019 (Otis) #1 for a family with a young child.
+  Matching only checks the good_with_children field and ignores the toddler
+  incident in behavior_notes. To fix in Phase 6 (conflict detection).
