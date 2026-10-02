@@ -1,0 +1,17 @@
+[
+  {"chunk_id": "fees#Fee schedule", "question": "How much is it to adopt a cat?", "answer": "Cats and kittens cost $150 to adopt.", "grounded": true},
+  {"chunk_id": "fees#Fee schedule", "question": "How much is it to adopt a cat?", "answer": "Cats cost $120 to adopt.", "grounded": false},
+  {"chunk_id": "fees#What the fee covers", "question": "What does the fee include?", "answer": "The fee covers vaccinations, spay or neuter surgery, a microchip, and pet insurance.", "grounded": false},
+  {"chunk_id": "fees#Payment methods", "question": "Can I pay in cash?", "answer": "No, we don't accept cash. You can pay by card, Zelle, or personal check.", "grounded": true},
+  {"chunk_id": "trial_and_returns#Trial period", "question": "Is there a trial period?", "answer": "You have a 30-day trial period with a full refund.", "grounded": false},
+  {"chunk_id": "trial_and_returns#Trial period", "question": "Can I get a refund?", "answer": "If you return the animal within 14 days, you get the fee back minus a $25 charge.", "grounded": true},
+  {"chunk_id": "eligibility#Basic requirements", "question": "How old do I need to be?", "answer": "You must be at least 18 years old to adopt.", "grounded": false},
+  {"chunk_id": "adoption_process#Home check", "question": "Is there a home check for cats?", "answer": "No. Cat adoptions don't need a home check.", "grounded": true},
+  {"chunk_id": "medical_and_vaccination#Microchips", "question": "Will my dog be microchipped?", "answer": "Yes. All dogs and cats are microchipped, and the registration is transferred to you.", "grounded": true},
+  {"chunk_id": "medical_and_vaccination#Spay and neuter", "question": "Who pays if my kitten is too young to spay?", "answer": "The shelter will pay for the surgery later at the clinic of your choice.", "grounded": false},
+  {"chunk_id": "faq#When is the shelter open", "question": "Can I visit on a weekday?", "answer": "Yes, the shelter is open every day from 10 am to 4 pm.", "grounded": false},
+  {"chunk_id": "transport#Delivery by volunteer drivers", "question": "Can you deliver the dog?", "answer": "Yes. Volunteer drivers can deliver within 100 miles; we ask for a $50 contribution toward gas.", "grounded": true},
+  {"chunk_id": "faq#When is the shelter open", "question": "Can I drop in on a Tuesday without calling?", "answer": "No. Weekday visits are by appointment only.", "grounded": true},
+  {"chunk_id": "fees#What the fee covers", "question": "Is pet insurance included?", "answer": "No, the fee does not include pet insurance.", "grounded": false},
+  {"chunk_id": "eligibility#Basic requirements", "question": "I'm 25. Can I adopt?", "answer": "Yes.", "grounded": true}
+]
