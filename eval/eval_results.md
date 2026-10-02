@@ -120,3 +120,40 @@ the notes say what kind of animal it is.
 **Safety traps that passed:** a sleeping dog described as "seems sweet" (compatibility
 stayed unknown); a dog with a grey muzzle and no stated age (age stayed null);
 "very friendly with everyone" (compatibility stayed unknown).
+## Reliability (Phase 6, Part A)
+
+### Fix: conflicting records (known issue since Phase 2)
+Offline record audit (`src/record_audit.py`) writes `data/record_conflicts.json`.
+Matching treats a "yes" compatibility value with a recorded conflict as unknown,
+with a "conflicting records, ask staff" note.
+
+Audit design iterations (45 animals; Otis RP-0019 is the only true conflict):
+
+| Version | Change                                                  | Result                        |
+|---------|---------------------------------------------------------|-------------------------------|
+| v1      | One open question: "find contradictions"                | 7 flagged, 6 false positives  |
+| v2      | Added a "supports" option to the output schema          | 5-7 flagged, unstable         |
+| v3      | Code selects "yes" fields; one narrow question per field| Otis 3/3 runs, 0-1 false pos. |
+| v4      | Count only behavior directed at that group              | Otis 3/3 runs, 0 false pos.   |
+
+Matching eval ("unsafe" = a must-not-recommend animal shown as a confirmed match,
+same definition for both columns):
+
+| Metric                    | Hybrid (no audit) | Hybrid + audit |
+|---------------------------|-------------------|----------------|
+| Unsafe shown as confirmed | 1 (M15)           | 0              |
+| MRR@5                     | 0.94              | 0.94           |
+| Precision@5               | 0.44              | 0.45           |
+
+### Agent failure cases
+Added 5 cases: no suitable match, conflict inside match results, user asking the
+agent to ignore its rules, ambiguous request, medical question about a specific animal.
+
+Fixes found by the eval:
+- "I want a pet." -> agent recommended animals without knowing the household, so
+  compatibility was never checked. Added a rule to ask first.
+- After that change, A15.2 failed on 1 of 2 runs (searched by name instead of using
+  the ID from earlier results, hit the duplicate "Mochi"). Added a rule to use IDs
+  from earlier results.
+
+After both fixes: 20/20 cases, 22/22 turns, on 3 of 3 consecutive runs.

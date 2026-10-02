@@ -56,7 +56,11 @@ def evaluate(cases: list[dict], get_results, verbose: bool) -> dict:
             no_match_passed.append(passed)
             status = "NO-MATCH PASS" if passed else "NO-MATCH FAIL"
 
-        unsafe = [animal_id for animal_id in returned if animal_id in case["unsafe_ids"]]
+        # Unsafe = an animal that must not be recommended, presented as a confirmed match
+        unsafe = [
+            animal.animal_id for animal, has_unknowns in results
+            if animal.animal_id in case["unsafe_ids"] and not has_unknowns
+        ]
         if unsafe:
             unsafe_cases.append(case["case_id"])
             status += f"  UNSAFE {unsafe}"
@@ -72,33 +76,41 @@ def evaluate(cases: list[dict], get_results, verbose: bool) -> dict:
         f"MRR@{TOP_K}": sum(reciprocal_ranks) / len(reciprocal_ranks),
         f"Precision@{TOP_K}": sum(precisions) / len(precisions),
         "No-match passed": f"{sum(no_match_passed)}/{len(no_match_passed)}",
-        "Cases with unsafe animal": f"{len(unsafe_cases)} {unsafe_cases}",
+        "Unsafe shown as confirmed": f"{len(unsafe_cases)} {unsafe_cases}",
         "Cases with constraint violation": f"{len(violation_cases)} {violation_cases}",
     }
 
 
 def main() -> None:
     cases = json.loads(CASES_PATH.read_text(encoding="utf-8"))
-    matcher = AnimalMatcher(load_animals())
+    animals = load_animals()
+    matcher = AnimalMatcher(animals)                        # uses data/record_conflicts.json
+    matcher_no_audit = AnimalMatcher(animals, conflicts={})  # same, but ignores the audit
 
     def baseline(request, needs):
         # Pure semantic search: ignores status, species, size, and compatibility
         return [(animal, False) for animal, _ in matcher.search(request, top_k=TOP_K)]
 
+    def hybrid_no_audit(request, needs):
+        return [(r.animal, bool(r.unknowns)) for r in matcher_no_audit.match(request, needs, top_k=TOP_K)]
+
     def hybrid(request, needs):
         return [(r.animal, bool(r.unknowns)) for r in matcher.match(request, needs, top_k=TOP_K)]
 
-    print("=== Hybrid matching, per case ===")
-    hybrid_metrics = evaluate(cases, hybrid, verbose=True)
-    baseline_metrics = evaluate(cases, baseline, verbose=False)
+    print("=== Hybrid matching + record audit, per case ===")
+    columns = {
+        "Hybrid+audit": evaluate(cases, hybrid, verbose=True),
+        "Baseline": evaluate(cases, baseline, verbose=False),
+        "Hybrid": evaluate(cases, hybrid_no_audit, verbose=False),
+    }
 
-    print(f"\n{'Metric':34s} {'Baseline':>12s} {'Hybrid':>12s}")
-    for name in hybrid_metrics:
-        b, h = baseline_metrics[name], hybrid_metrics[name]
-        b = f"{b:.2f}" if isinstance(b, float) else b.split()[0]
-        h = f"{h:.2f}" if isinstance(h, float) else h.split()[0]
-        print(f"{name:34s} {b:>12s} {h:>12s}")
-    print(f"\nUnsafe cases (hybrid): {hybrid_metrics['Cases with unsafe animal']}")
+    print(f"\n{'Metric':32s} {'Baseline':>10s} {'Hybrid':>10s} {'Hybrid+audit':>14s}")
+    for name in columns["Hybrid+audit"]:
+        cells = []
+        for column in ["Baseline", "Hybrid", "Hybrid+audit"]:
+            value = columns[column][name]
+            cells.append(f"{value:.2f}" if isinstance(value, float) else value.split()[0])
+        print(f"{name:32s} {cells[0]:>10s} {cells[1]:>10s} {cells[2]:>14s}")
 
 
 if __name__ == "__main__":

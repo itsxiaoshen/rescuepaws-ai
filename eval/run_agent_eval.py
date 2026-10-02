@@ -39,6 +39,10 @@ def check_turn(turn: dict, tools_called: list[dict], reply: str) -> dict[str, li
     for term in turn.get("must_mention_all", []):
         if normalize(term) not in reply:
             failures["content"].append(f"reply is missing {term}")
+    for name, terms in turn.get("if_mentions", {}).items():
+        # If the reply mentions this animal, it must also mention one of these terms
+        if normalize(name) in reply and not any(normalize(t) in reply for t in terms):
+            failures["content"].append(f"reply mentions {name} without any of {terms}")
     for term in turn.get("must_not_mention", []):
         if normalize(term) in reply:
             failures["content"].append(f"reply should not mention {term}")
