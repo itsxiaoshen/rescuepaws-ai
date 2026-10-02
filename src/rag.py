@@ -1,13 +1,17 @@
 """Retrieval-augmented answering over shelter policy documents."""
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
 from pydantic import BaseModel
+from rank_bm25 import BM25Okapi
 from sentence_transformers import SentenceTransformer
 
 from src.llm import generate_structured
-from src.matching import MODEL_NAME
+
+# Chosen in Phase 6 by comparing models on dev and held-out questions (see eval/eval_results.md)
+POLICY_MODEL_NAME = "BAAI/bge-small-en-v1.5"
 
 DEFAULT_POLICY_DIR = Path(__file__).resolve().parent.parent / "data" / "shelter_policies"
 
@@ -54,20 +58,54 @@ def load_policy_chunks(policy_dir: Path = DEFAULT_POLICY_DIR) -> list[PolicyChun
     return chunks
 
 
+STOPWORDS = {
+    "a", "an", "the", "and", "or", "of", "to", "in", "on", "for", "with", "is", "are", "be",
+    "i", "my", "me", "you", "your", "we", "our", "it", "can", "do", "does", "will", "what",
+    "how", "if", "at", "by", "this", "that", "from", "as", "any", "there", "have", "has",
+}
+
+
+def tokenize(text: str) -> list[str]:
+    """Lowercase words without very common words, for keyword (BM25) search."""
+    return [word for word in re.findall(r"[a-z0-9]+", text.lower()) if word not in STOPWORDS]
+
+
+def reciprocal_rank_fusion(rankings: list[np.ndarray], k: int = 60) -> dict[int, float]:
+    """Combine several rankings: each item gets 1 / (k + rank) from every ranking it appears in."""
+    fused: dict[int, float] = {}
+    for ranking in rankings:
+        for rank, index in enumerate(ranking, start=1):
+            fused[int(index)] = fused.get(int(index), 0.0) + 1 / (k + rank)
+    return fused
+
+
 class PolicyRetriever:
-    def __init__(self, chunks: list[PolicyChunk], model_name: str = MODEL_NAME):
+    """Finds relevant policy chunks. mode: "embedding", "bm25" (keywords), or "hybrid" (both)."""
+
+    def __init__(self, chunks: list[PolicyChunk], model_name: str = POLICY_MODEL_NAME, mode: str = "embedding"):
         self.chunks = chunks
+        self.mode = mode
         self.model = SentenceTransformer(model_name)
         # Include title and heading so a short section still carries its topic
         texts = [f"{c.title} - {c.section}\n{c.text}" for c in chunks]
         self.embeddings = self.model.encode(texts, normalize_embeddings=True)
+        self.bm25 = BM25Okapi([tokenize(text) for text in texts])
 
     def retrieve(self, query: str, top_k: int = 3) -> list[RetrievedChunk]:
         """Return the top_k most relevant chunks, best first."""
         query_embedding = self.model.encode([query], normalize_embeddings=True)[0]
-        scores = self.embeddings @ query_embedding
-        best = np.argsort(-scores)[:top_k]
-        return [RetrievedChunk(chunk=self.chunks[i], score=float(scores[i])) for i in best]
+        embedding_scores = self.embeddings @ query_embedding
+        bm25_scores = self.bm25.get_scores(tokenize(query))
+
+        if self.mode == "embedding":
+            scores = {i: float(s) for i, s in enumerate(embedding_scores)}
+        elif self.mode == "bm25":
+            scores = {i: float(s) for i, s in enumerate(bm25_scores)}
+        else:
+            scores = reciprocal_rank_fusion([np.argsort(-embedding_scores), np.argsort(-bm25_scores)])
+
+        best = sorted(scores, key=scores.get, reverse=True)[:top_k]
+        return [RetrievedChunk(chunk=self.chunks[i], score=scores[i]) for i in best]
 
 
 # ---------------------------------------------------------------------------
@@ -85,6 +123,7 @@ Rules:
 - Use only facts stated in the excerpts. Do not use outside knowledge, and do not guess facts the excerpts don't state.
 - Applying a rule from the excerpts to the adopter's situation is expected, not guessing. For example, if a policy says "We do not accept cash", answer "No" to "Can I pay in cash?".
 - If the excerpts don't contain the answer, set answerable to false and leave answer empty.
+- Don't conclude that something is excluded or not allowed just because the excerpts don't mention it. For example, if a list of what the fee covers doesn't mention insurance, the excerpts don't say whether insurance is included: set answerable to false.
 - If the question asks for medical advice about a specific animal (diagnosis, treatment, medication), set answerable to false.
 - List the chunk_id of every excerpt you used in cited_chunk_ids.
 - Keep the answer short and friendly."""

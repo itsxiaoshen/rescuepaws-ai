@@ -1,0 +1,12 @@
+[
+  {"qid": "H01", "question": "Do I need to be a certain age to adopt?", "relevant_chunk_ids": ["eligibility#Basic requirements"]},
+  {"qid": "H02", "question": "Are rabbits cheaper to adopt than dogs?", "relevant_chunk_ids": ["fees#Fee schedule"]},
+  {"qid": "H03", "question": "My landlord doesn't allow pets. Can I still apply?", "relevant_chunk_ids": ["eligibility#Renters", "eligibility#Reasons an application may be declined"]},
+  {"qid": "H04", "question": "Is there a way to pay less if I'm over 65?", "relevant_chunk_ids": ["fees#Discounts and fee waivers"]},
+  {"qid": "H05", "question": "What happens if my new cat doesn't get along with my family after a few days?", "relevant_chunk_ids": ["trial_and_returns#Trial period"]},
+  {"qid": "H06", "question": "Will my dog have a microchip?", "relevant_chunk_ids": ["medical_and_vaccination#Microchips"]},
+  {"qid": "H07", "question": "Can I collect the dog from the family that's been fostering him?", "relevant_chunk_ids": ["transport#Picking up from a foster home"]},
+  {"qid": "H08", "question": "Do I need to bring my current dog to meet the new one?", "relevant_chunk_ids": ["adoption_process#Meet-and-greet", "eligibility#Households with other pets"]},
+  {"qid": "H09", "question": "Can I stop by on a Tuesday afternoon?", "relevant_chunk_ids": ["faq#When is the shelter open"]},
+  {"qid": "H10", "question": "Is it okay to sell a dog I adopted from you?", "relevant_chunk_ids": ["trial_and_returns#Rehoming an adopted animal"]}
+]
