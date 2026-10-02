@@ -46,3 +46,28 @@
   0.65 because it is on-topic with "What the fee covers", which never mentions
   insurance. Decision: abstention is handled by the LLM checking the evidence,
   not by a score threshold.
+
+## Grounded Answers (Phase 3)
+
+- Model: gpt-5.4-mini, top_k = 3, same 30 questions as retrieval eval
+- Grounding guard: answers without a valid citation (a chunk that was actually
+  retrieved) are converted to abstentions in code.
+
+| Metric                            | Run 1 (prompt v1) | Run 2 (prompt v2) |
+|-----------------------------------|-------------------|-------------------|
+| Answerable questions answered     | 19/24             | 22/24             |
+| Citation correct (when answered)  | 19/19             | 22/22             |
+| Unanswerable questions abstained  | 6/6               | 6/6               |
+| Hallucinated answers              | 0                 | 0                 |
+
+**What changed:** v1 over-abstained on questions that only needed a stated rule
+applied to the user's situation (e.g. "Can I pay in cash?" vs "We do not accept cash").
+v2 adds one rule with an example. Abstention on unanswerable questions did not regress.
+
+**Observations**
+- Remaining misses (R06, R07) are retrieval failures. The LLM abstained instead of
+  guessing, so the system fails safe. The next improvement should target retrieval.
+- Results vary slightly between runs (e.g. R23), so a single run is not a stable estimate.
+- Model comparison during setup: gpt-4.1-mini answered "No, pet insurance is not
+  included" from a fee schedule that never mentions insurance (an ungrounded claim);
+  gpt-5.4-mini abstained.
