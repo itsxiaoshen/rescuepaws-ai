@@ -3,3 +3,4 @@ python-dotenv>=1.0
 pytest>=8.0
 sentence-transformers>=3.0
 numpy
+openai>=3.0

@@ -1,10 +1,12 @@
-"""Retrieval over shelter policy documents (the "R" in RAG)."""
+"""Retrieval-augmented answering over shelter policy documents."""
 from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
+from pydantic import BaseModel
 from sentence_transformers import SentenceTransformer
 
+from src.llm import generate_structured
 from src.matching import MODEL_NAME
 
 DEFAULT_POLICY_DIR = Path(__file__).resolve().parent.parent / "data" / "shelter_policies"
@@ -66,3 +68,67 @@ class PolicyRetriever:
         scores = self.embeddings @ query_embedding
         best = np.argsort(-scores)[:top_k]
         return [RetrievedChunk(chunk=self.chunks[i], score=float(scores[i])) for i in best]
+
+
+# ---------------------------------------------------------------------------
+# Grounded answering (the "G" in RAG)
+# ---------------------------------------------------------------------------
+
+ABSTAIN_MESSAGE = (
+    "I couldn't find the answer in the shelter's policy documents. "
+    "Please contact adoptions@rescuepaws.example."
+)
+
+ANSWER_SYSTEM_PROMPT = """You answer adopters' questions for an animal shelter, using ONLY the policy excerpts provided.
+
+Rules:
+- Use only facts stated in the excerpts. Do not use outside knowledge, and do not guess facts the excerpts don't state.
+- Applying a rule from the excerpts to the adopter's situation is expected, not guessing. For example, if a policy says "We do not accept cash", answer "No" to "Can I pay in cash?".
+- If the excerpts don't contain the answer, set answerable to false and leave answer empty.
+- If the question asks for medical advice about a specific animal (diagnosis, treatment, medication), set answerable to false.
+- List the chunk_id of every excerpt you used in cited_chunk_ids.
+- Keep the answer short and friendly."""
+
+
+class LLMPolicyAnswer(BaseModel):
+    """The structured output we ask the LLM for."""
+    answerable: bool
+    answer: str
+    cited_chunk_ids: list[str]
+
+
+@dataclass
+class PolicyAnswer:
+    question: str
+    answer: str
+    answerable: bool
+    citations: list[PolicyChunk]
+    retrieved: list[RetrievedChunk]
+
+
+def format_evidence(retrieved: list[RetrievedChunk]) -> str:
+    return "\n\n".join(
+        f"[{r.chunk.chunk_id}] ({r.chunk.title} - {r.chunk.section})\n{r.chunk.text}"
+        for r in retrieved
+    )
+
+
+def answer_policy_question(
+    question: str,
+    retriever: PolicyRetriever,
+    top_k: int = 3,
+    generate=generate_structured,
+) -> PolicyAnswer:
+    """Retrieve evidence, ask the LLM to answer from it, and verify the citations."""
+    retrieved = retriever.retrieve(question, top_k=top_k)
+    user_message = f"Policy excerpts:\n\n{format_evidence(retrieved)}\n\nQuestion: {question}"
+    llm_answer = generate(ANSWER_SYSTEM_PROMPT, user_message, LLMPolicyAnswer)
+
+    # Keep only citations that point to chunks we actually gave the LLM
+    retrieved_by_id = {r.chunk.chunk_id: r.chunk for r in retrieved}
+    citations = [retrieved_by_id[cid] for cid in llm_answer.cited_chunk_ids if cid in retrieved_by_id]
+
+    # Grounding guard: an answer without at least one valid citation is not trusted
+    if not llm_answer.answerable or not citations:
+        return PolicyAnswer(question, ABSTAIN_MESSAGE, False, [], retrieved)
+    return PolicyAnswer(question, llm_answer.answer, True, citations, retrieved)
