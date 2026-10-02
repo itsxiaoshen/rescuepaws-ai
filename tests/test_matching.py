@@ -55,3 +55,13 @@ def test_taro_ranks_above_bruno_for_family(matcher):
 def test_semantic_search_finds_rabbit(matcher):
     animal, _ = matcher.search("a rabbit that likes hay and tunnels", top_k=1)[0]
     assert animal.species == Species.OTHER
+
+
+def test_conflicting_record_is_not_a_confirmed_match():
+    conflicts = {"RP-0019": [{"field": "good_with_children", "explanation": "growled at a toddler",
+                              "quote": "growled when a visiting toddler reached toward his food bowl."}]}
+    matcher = AnimalMatcher(load_animals(), conflicts=conflicts)
+    results = matcher.match("a calm dog", HouseholdNeeds(species=Species.DOG, has_children=True), top_k=50)
+    otis = next(r for r in results if r.animal.animal_id == "RP-0019")
+    assert any("Conflicting records" in u for u in otis.unknowns)
+    assert not any("good with children" in reason for reason in otis.reasons)

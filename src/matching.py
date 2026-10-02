@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 import numpy as np
 from sentence_transformers import SentenceTransformer
 
+from src.data_loader import load_record_conflicts
 from src.schemas import AdoptionStatus, AnimalProfile, Size, Species, TriState
 
 MODEL_NAME = "all-MiniLM-L6-v2"
@@ -56,8 +57,15 @@ def animal_to_text(animal: AnimalProfile) -> str:
 
 
 class AnimalMatcher:
-    def __init__(self, animals: list[AnimalProfile], model_name: str = MODEL_NAME):
+    def __init__(
+        self,
+        animals: list[AnimalProfile],
+        model_name: str = MODEL_NAME,
+        conflicts: dict[str, list[dict]] | None = None,
+    ):
         self.animals = animals
+        # Record conflicts found by the audit (src/record_audit.py), keyed by animal ID
+        self.conflicts = conflicts if conflicts is not None else load_record_conflicts()
         self.model = SentenceTransformer(model_name)
         texts = [animal_to_text(animal) for animal in animals]
         # normalize_embeddings=True makes every vector length 1, so dot product == cosine similarity
@@ -91,6 +99,7 @@ class AnimalMatcher:
                 continue
 
             result = MatchResult(animal=animal, score=float(score))
+            conflicts = {c["field"]: c for c in self.conflicts.get(animal.animal_id, [])}
             excluded = False
             for need_attr, animal_attr, label in COMPATIBILITY_CHECKS:
                 if not getattr(needs, need_attr):
@@ -99,7 +108,13 @@ class AnimalMatcher:
                 if value == TriState.NO:
                     excluded = True
                     break
-                if value == TriState.YES:
+                if value == TriState.YES and animal_attr in conflicts:
+                    # Conflicting records: never present this as a confirmed match
+                    result.unknowns.append(
+                        f"Conflicting records about {label}: {conflicts[animal_attr]['quote']} "
+                        f"Ask shelter staff before deciding."
+                    )
+                elif value == TriState.YES:
                     source = animal.evidence.get(animal_attr, "source not recorded")
                     result.reasons.append(f"Recorded as good with {label}: {source}")
                 else:

@@ -21,3 +21,13 @@ def load_animals(path: Path = DEFAULT_ANIMALS_PATH) -> list[AnimalProfile]:
         seen.add(animal.animal_id)
 
     return animals
+
+
+DEFAULT_CONFLICTS_PATH = DEFAULT_ANIMALS_PATH.parent / "record_conflicts.json"
+
+
+def load_record_conflicts(path: Path = DEFAULT_CONFLICTS_PATH) -> dict[str, list[dict]]:
+    """Conflicts found by the record audit, keyed by animal ID. Empty if no audit has run."""
+    if not path.exists():
+        return {}
+    return json.loads(path.read_text(encoding="utf-8"))

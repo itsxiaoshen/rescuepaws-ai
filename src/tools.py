@@ -117,7 +117,9 @@ class ShelterTools:
         animal = get_animal_profile(animal_id.strip().upper(), self.animals)
         if animal is None:
             return {"error": f"No animal with ID {animal_id} in shelter records."}
-        return animal.model_dump(mode="json")
+        profile = animal.model_dump(mode="json")
+        profile["record_conflicts"] = self.matcher.conflicts.get(animal.animal_id, [])
+        return profile
 
     def search_animals(self, name=None, species=None, size=None, include_unavailable=False) -> dict:
         results = filter_animals(
