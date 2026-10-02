@@ -34,3 +34,13 @@ def generate_structured(system: str, user: str, output_type: type[T], model: str
     if message.parsed is None:
         raise RuntimeError(f"LLM did not return structured output (refusal: {message.refusal})")
     return message.parsed
+
+
+def chat_with_tools(messages: list, tools: list, model: str = DEFAULT_MODEL):
+    """One LLM step in an agent loop. Returns the assistant message (text and/or tool calls)."""
+    response = get_client().chat.completions.create(
+        model=model,
+        messages=messages,
+        tools=tools,
+    )
+    return response.choices[0].message
