@@ -1,6 +1,9 @@
 """The only module that talks to the LLM provider. To switch providers, change this file."""
+import base64
+import mimetypes
 import os
 from functools import lru_cache
+from pathlib import Path
 from typing import TypeVar
 
 from dotenv import load_dotenv
@@ -20,13 +23,32 @@ def get_client() -> OpenAI:
     return OpenAI()
 
 
-def generate_structured(system: str, user: str, output_type: type[T], model: str = DEFAULT_MODEL) -> T:
-    """Ask the LLM for a response that matches a Pydantic model."""
+def image_to_data_url(image_path: Path) -> str:
+    """Encode a local image so it can be sent inside the API request."""
+    mime_type = mimetypes.guess_type(image_path)[0] or "image/jpeg"
+    encoded = base64.b64encode(Path(image_path).read_bytes()).decode("ascii")
+    return f"data:{mime_type};base64,{encoded}"
+
+
+def generate_structured(
+    system: str,
+    user: str,
+    output_type: type[T],
+    model: str = DEFAULT_MODEL,
+    image_path: Path | None = None,
+) -> T:
+    """Ask the LLM for a response that matches a Pydantic model. Optionally include one image."""
+    content = user
+    if image_path is not None:
+        content = [
+            {"type": "text", "text": user},
+            {"type": "image_url", "image_url": {"url": image_to_data_url(image_path)}},
+        ]
     response = get_client().chat.completions.parse(
         model=model,
         messages=[
             {"role": "system", "content": system},
-            {"role": "user", "content": user},
+            {"role": "user", "content": content},
         ],
         response_format=output_type,
     )

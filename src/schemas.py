@@ -64,6 +64,7 @@ class AnimalProfile(BaseModel):
     good_with_cats: TriState = TriState.UNKNOWN
     good_with_children: TriState = TriState.UNKNOWN
 
+    appearance: str | None = None         # observable only, e.g. "orange tabby"
     location: str | None = None
     status: AdoptionStatus = AdoptionStatus.AVAILABLE
 
