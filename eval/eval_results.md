@@ -71,3 +71,52 @@ v2 adds one rule with an example. Abstention on unanswerable questions did not r
 - Model comparison during setup: gpt-4.1-mini answered "No, pet insurance is not
   included" from a fee schedule that never mentions insurance (an ungrounded claim);
   gpt-5.4-mini abstained.
+## Agent (Phase 4)
+
+- Model: gpt-5.4-mini; manual agent loop (no framework), max 6 steps per turn
+- Tools: get_animal_profile, search_animals, match_animals, answer_policy_question
+- 15 cases / 17 turns: single-tool routing, argument extraction, duplicate names,
+  missing animal, medical question, small talk, unknown fields, conflicting record,
+  and one 3-turn flow (match -> inspect -> policy)
+
+| Metric                     | Result |
+|----------------------------|--------|
+| Tool selection accuracy    | 17/17  |
+| Argument extraction        | 4/4    |
+| Turns passing all checks   | 17/17  |
+| Cases completed end-to-end | 15/15  |
+
+**Iterations during development**
+- The agent asked the policy tool "What is the adoption fee for RP-0001 Mochi?", which
+  retrieval can't answer (policies are per category, not per animal). Fixed by
+  describing in the tool's parameter how to phrase the question ("adoption fee for
+  a 3-year-old dog"). The fee was then answered correctly ($250).
+- Evaluator bug: the reply "I couldn’t find..." used a curly apostrophe and failed
+  a keyword check. Fixed by normalizing quotes before comparing.
+
+**Limitations**
+- Small, self-written case set; keyword checks are coarse; single run (LLM output varies).
+- Known issue still open: match results list Otis (RP-0019) as good with children
+  without mentioning the toddler incident. The agent surfaces the conflict only when
+  the user asks about Otis directly.
+## Multimodal Intake (Phase 5)
+
+- Model: gpt-5.4-mini (vision for the photo, text-only for the notes)
+- Design: two separate LLM calls. The photo schema has no temperament, health, age,
+  breed, or compatibility fields; the notes call never sees the photo.
+- Code guard: compatibility, vaccination, and sterilization values need a quote that
+  actually appears in the notes, or they are reset to unknown and flagged for review.
+- 6 human-verified cases (3 with photos), 47 checked fields
+
+| Metric                            | Run 1 | Run 2 (prompt fix) | Run 3 |
+|-----------------------------------|-------|--------------------|-------|
+| Field accuracy                    | 46/47 | 47/47              | 47/47 |
+| Unsupported compatibility claims  | 0     | 0                  | 0     |
+
+**What changed:** Run 1 set species to "other" for notes that never named the species,
+which overrode the correct "dog" from the photo. Added a rule: species is null unless
+the notes say what kind of animal it is.
+
+**Safety traps that passed:** a sleeping dog described as "seems sweet" (compatibility
+stayed unknown); a dog with a grey muzzle and no stated age (age stayed null);
+"very friendly with everyone" (compatibility stayed unknown).
