@@ -157,3 +157,37 @@ Fixes found by the eval:
   from earlier results.
 
 After both fixes: 20/20 cases, 22/22 turns, on 3 of 3 consecutive runs.
+## Reliability (Phase 6, Part B)
+
+### Retrieval: model and method comparison
+Dev = 24 questions used to choose the setup (optimistic). Held-out = 10 new questions
+not used for any decision.
+
+| Setup                              | Hit@3 dev | Hit@3 held-out | MRR@3 dev |
+|------------------------------------|-----------|----------------|-----------|
+| all-MiniLM-L6-v2, embedding        | 0.92      | 0.80           | 0.80      |
+| all-MiniLM-L6-v2, hybrid (BM25+RRF)| 0.83      | 0.60           | 0.72      |
+| bge-small-en-v1.5, embedding       | 0.96      | 0.90           | 0.92      |
+| bge-small-en-v1.5, hybrid          | 0.88      | 0.70           | 0.83      |
+
+Decision: bge-small-en-v1.5, embedding only. Hybrid search hurt on both sets: the
+questions are deliberately paraphrased, so keyword matching adds noise.
+
+### LLM-as-judge for groundedness
+- Judge validated on 15 labeled answers (7 grounded, 8 with planted errors): 15/15 on 2 runs.
+- v1 of the judge didn't see the question, so a bare "Yes."/"No." looked unsupported.
+  Fixed by passing the question and adding Yes/No validation cases.
+
+### Grounded answers, 40 questions (dev + held-out), 3 runs
+
+| Metric                   | Before fix (mean, min) | After fix (mean, min) |
+|--------------------------|------------------------|-----------------------|
+| Unanswerable abstained   | 0.94, 0.83             | 1.00, 1.00            |
+| Answerable answered      | 0.95, 0.94             | 0.93, 0.91            |
+| Answers grounded (judge) | n/a (judge v1)         | 0.98, 0.97            |
+
+Fix: answer prompt rule "don't conclude something is excluded just because the
+excerpts don't mention it". Found because 1 of 3 runs answered "No" to "Is pet
+insurance included?" with a valid citation. The citation check alone can't catch this.
+Trade-off: slightly more over-abstention on answerable questions, in exchange for
+no hallucinated answers.

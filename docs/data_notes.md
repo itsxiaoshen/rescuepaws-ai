@@ -30,3 +30,4 @@ All animals are synthetic. No real adopter, volunteer, or medical data.
 - Phase 2 matching ranks RP-0019 (Otis) #1 for a family with a young child.
   Matching only checks the good_with_children field and ignores the toddler
   incident in behavior_notes. To fix in Phase 6 (conflict detection).
+**Fixed in Phase 6** (record audit + matching).
