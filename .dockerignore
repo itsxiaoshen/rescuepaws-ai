@@ -1,0 +1,11 @@
+.git
+.github
+.venv
+.env
+**/__pycache__
+.pytest_cache
+notebooks
+docs
+eval
+tests
+data/intake_approved.json
