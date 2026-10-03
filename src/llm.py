@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import TypeVar
 
 from dotenv import load_dotenv
-from openai import OpenAI
+from openai import OpenAI, OpenAIError
 from pydantic import BaseModel
 
 load_dotenv()  # reads OPENAI_API_KEY (and optional OPENAI_MODEL) from .env
@@ -15,6 +15,10 @@ load_dotenv()  # reads OPENAI_API_KEY (and optional OPENAI_MODEL) from .env
 DEFAULT_MODEL = os.getenv("OPENAI_MODEL", "gpt-5.4-mini")
 
 T = TypeVar("T", bound=BaseModel)
+
+
+class LLMUnavailableError(Exception):
+    """The LLM provider could not be reached or returned an error (network, auth, rate limit...)."""
 
 
 @lru_cache(maxsize=1)
@@ -44,14 +48,17 @@ def generate_structured(
             {"type": "text", "text": user},
             {"type": "image_url", "image_url": {"url": image_to_data_url(image_path)}},
         ]
-    response = get_client().chat.completions.parse(
-        model=model,
-        messages=[
-            {"role": "system", "content": system},
-            {"role": "user", "content": content},
-        ],
-        response_format=output_type,
-    )
+    try:
+        response = get_client().chat.completions.parse(
+            model=model,
+            messages=[
+                {"role": "system", "content": system},
+                {"role": "user", "content": content},
+            ],
+            response_format=output_type,
+        )
+    except OpenAIError as e:
+        raise LLMUnavailableError(str(e)) from e
     message = response.choices[0].message
     if message.parsed is None:
         raise RuntimeError(f"LLM did not return structured output (refusal: {message.refusal})")
@@ -60,9 +67,12 @@ def generate_structured(
 
 def chat_with_tools(messages: list, tools: list, model: str = DEFAULT_MODEL):
     """One LLM step in an agent loop. Returns the assistant message (text and/or tool calls)."""
-    response = get_client().chat.completions.create(
-        model=model,
-        messages=messages,
-        tools=tools,
-    )
+    try:
+        response = get_client().chat.completions.create(
+            model=model,
+            messages=messages,
+            tools=tools,
+        )
+    except OpenAIError as e:
+        raise LLMUnavailableError(str(e)) from e
     return response.choices[0].message
