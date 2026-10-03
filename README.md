@@ -7,7 +7,8 @@ animals. An LLM agent chooses among tools for animal lookup, semantic adopter ma
 and policy Q&A grounded in shelter documents. It never guesses an animal's health,
 temperament, or safety around children, dogs, or cats.
 
-![Chat demo](docs/images/chat.png)
+**Demo:** household-aware matching with safety warnings, grounded policy answers with sources, and declining a question the documents don't cover.
+https://github.com/user-attachments/assets/1af0c37d-1479-4246-abf9-1813f3327475
 
 ## At a glance
 
