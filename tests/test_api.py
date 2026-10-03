@@ -1,22 +1,10 @@
-"""API tests with fake LLMs: no API calls."""
-import pytest
+"""API tests with fake LLMs: no API calls. The `tools` fixture is in conftest.py."""
 from fastapi.testclient import TestClient
 
 from app.api import create_app
 from src.agent import ShelterAgent
 from src.llm import LLMUnavailableError
-from src.rag import LLMPolicyAnswer
-from src.tools import ShelterTools
 from tests.test_agent import scripted_llm, text_message, tool_call_message
-
-
-def fake_policy_llm(system, user, output_type):
-    return LLMPolicyAnswer(answerable=True, answer="Cats cost $150.", cited_chunk_ids=["fees#Fee schedule"])
-
-
-@pytest.fixture(scope="module")
-def tools():
-    return ShelterTools(generate=fake_policy_llm)
 
 
 def make_client(tools, agent_factory=None):

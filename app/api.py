@@ -6,10 +6,11 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from app.rate_limit import RateLimiter
 from src.agent import ShelterAgent
 from src.llm import LLMUnavailableError
 from src.tools import ShelterTools
@@ -21,6 +22,7 @@ logging.basicConfig(
 logger = logging.getLogger("rescuepaws.api")
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
+MAX_SESSIONS = 500  # oldest conversations are dropped beyond this, so memory can't grow forever
 
 SpeciesName = Literal["dog", "cat", "other"]
 SizeName = Literal["small", "medium", "large"]
@@ -61,10 +63,38 @@ def call_llm(action):
         raise HTTPException(status_code=503, detail="The language model is unavailable. Please try again.")
 
 
-def create_app(tools: ShelterTools | None = None, agent_factory=ShelterAgent) -> FastAPI:
-    """Build the app. Tests pass in fake tools or agents; normally both are real."""
+def default_rate_limiter() -> RateLimiter:
+    """Limits for endpoints that call the LLM. Override with environment variables."""
+    return RateLimiter(
+        per_minute=int(os.getenv("RATE_LIMIT_PER_MINUTE", "5")),
+        per_day=int(os.getenv("RATE_LIMIT_PER_DAY", "50")),
+        global_per_day=int(os.getenv("RATE_LIMIT_GLOBAL_PER_DAY", "300")),
+    )
+
+
+def client_id(request: Request) -> str:
+    """The caller's IP. Behind a proxy (e.g. Hugging Face Spaces) it's in X-Forwarded-For."""
+    forwarded = request.headers.get("x-forwarded-for", "")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
+
+def create_app(
+    tools: ShelterTools | None = None,
+    agent_factory=ShelterAgent,
+    rate_limiter: RateLimiter | None = None,
+) -> FastAPI:
+    """Build the app. Tests pass in fake tools, agents, or limits; normally all are real."""
     # Conversations are kept in memory: fine for a demo, lost on restart, one process only
     sessions: dict[str, ShelterAgent] = {}
+    limiter = rate_limiter or default_rate_limiter()
+
+    def enforce_rate_limit(request: Request) -> None:
+        message = limiter.check(client_id(request))
+        if message:
+            logger.warning("rate limited client=%s: %s", client_id(request), message)
+            raise HTTPException(status_code=429, detail=message)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -98,15 +128,17 @@ def create_app(tools: ShelterTools | None = None, agent_factory=ShelterAgent) ->
     def match_animals(body: MatchRequest):
         return app.state.tools.match_animals(**body.model_dump())
 
-    @app.post("/policy")
+    @app.post("/policy", dependencies=[Depends(enforce_rate_limit)])
     def answer_policy(body: PolicyRequest):
         return call_llm(lambda: app.state.tools.answer_policy_question(body.question))
 
-    @app.post("/chat", response_model=ChatResponse)
+    @app.post("/chat", response_model=ChatResponse, dependencies=[Depends(enforce_rate_limit)])
     def chat(body: ChatRequest):
         session_id = body.session_id or uuid.uuid4().hex
         agent = sessions.get(session_id)
         if agent is None:  # new conversation (or the server restarted)
+            if len(sessions) >= MAX_SESSIONS:
+                sessions.pop(next(iter(sessions)))  # drop the oldest conversation
             agent = sessions[session_id] = agent_factory(app.state.tools)
 
         log_start = len(agent.tool_log)

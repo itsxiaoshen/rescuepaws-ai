@@ -37,3 +37,24 @@ jobs:
       - name: Show container logs
         if: always()
         run: docker logs rescuepaws || echo "No container was started"
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: docker
+    # Only deploy pushes to main, never pull requests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+      - name: Deploy to Hugging Face Space
+        if: env.HF_TOKEN != ''
+        run: |
+          pip install huggingface_hub
+          python deploy/push_to_space.py
+      - name: Skip deploy (HF_TOKEN secret not set)
+        if: env.HF_TOKEN == ''
+        run: echo "Add an HF_TOKEN repository secret to enable deployment."
